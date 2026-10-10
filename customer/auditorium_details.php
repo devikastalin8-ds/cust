@@ -8,7 +8,7 @@ if (!isset($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
-$sql = "SELECT a.*, o.name AS owner_name, o.phone AS owner_phone 
+$sql = "SELECT a.*, o.name AS owner_name, o.phone AS owner_phone, o.is_verified AS owner_is_verified, o.id_proof_type, o.id_proof_number 
         FROM auditoriums a 
         LEFT JOIN owners o ON a.owner_id = o.owner_id 
         WHERE a.auditorium_id = '$id'";
@@ -120,6 +120,17 @@ if ($hall['auditorium_id'] == 4) $img_src = "https://images.unsplash.com/photo-1
             <div>
                 <div class="card">
                     <div class="card-body">
+                        <?php if ($hall['owner_is_verified'] == 1): ?>
+                            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 12px 15px; margin-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 8px; color: #047857; font-weight: 600; font-size: 14px;">
+                                    <span>🛡️</span> Genuine Verified Owner
+                                </div>
+                                <p style="font-size: 12.5px; color: #065f46; margin-top: 4px; line-height: 1.4;">
+                                    This hall owner has been verified by the Admin using Government ID Proof (<strong><?php echo htmlspecialchars($hall['id_proof_type'] ?? 'ID Proof'); ?></strong>). You can safely book this venue.
+                                </p>
+                            </div>
+                        <?php endif; ?>
+
                         <h1 style="font-size: 24px; color: #0f172a; margin-bottom: 10px;"><?php echo htmlspecialchars($hall['auditorium_name']); ?></h1>
                         <p class="card-info" style="font-size: 15px;">📍 <strong>Location:</strong> <?php echo htmlspecialchars($hall['location']); ?></p>
                         <p class="card-info" style="font-size: 15px;">👥 <strong>Capacity:</strong> <?php echo htmlspecialchars($hall['capacity']); ?> Guests</p>
@@ -138,7 +149,10 @@ if ($hall['auditorium_id'] == 4) $img_src = "https://images.unsplash.com/photo-1
 
                         <h4 style="color: #334155; margin-bottom: 6px;">Contact Information</h4>
                         <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">
-                            👤 Owner: <strong><?php echo htmlspecialchars($hall['owner_name'] ?? 'Authorized Owner'); ?></strong><br>
+                            👤 Owner: <strong><?php echo htmlspecialchars($hall['owner_name'] ?? 'Authorized Owner'); ?></strong> 
+                            <?php if ($hall['owner_is_verified'] == 1): ?>
+                                <span class="badge badge-success" style="font-size: 11px;">✓ Verified</span>
+                            <?php endif; ?><br>
                             📞 Phone: <strong><?php echo htmlspecialchars($hall['owner_phone'] ?? '9876543210'); ?></strong>
                         </p>
 

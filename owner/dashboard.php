@@ -11,6 +11,10 @@ if (!isset($_SESSION['owner_id'])) {
 $owner_id = $_SESSION['owner_id'];
 $owner_name = $_SESSION['owner_name'];
 
+// Fetch Owner Profile Details for Verification Check
+$owner_data = $conn->query("SELECT * FROM owners WHERE owner_id='$owner_id'")->fetch_assoc();
+$is_verified = $owner_data['is_verified'] ?? 0;
+
 // 1. Total Auditoriums Count
 $halls_res = $conn->query("SELECT COUNT(*) AS total FROM auditoriums WHERE owner_id='$owner_id'");
 $total_halls = $halls_res->fetch_assoc()['total'];
@@ -70,6 +74,33 @@ $recent_bookings = $conn->query("SELECT b.*, a.auditorium_name, u.name AS custom
             <h1 style="font-size: 26px; color:#0f172a;">Welcome, <?php echo htmlspecialchars($owner_name); ?>! 🏢</h1>
             <p style="color: #64748b;">Manage your auditorium listings, add-on services (Catering, Photography, Decor), and customer reservations.</p>
         </div>
+
+        <!-- Genuine Owner Verification Status Banner -->
+        <?php if ($is_verified == 1): ?>
+            <div class="alert alert-success" style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                <span style="font-size: 24px;">🛡️</span>
+                <div>
+                    <strong style="font-size: 15px;">Verified Genuine Owner Account:</strong><br>
+                    <span style="font-size: 13.5px;">Your ID Proof (<?php echo htmlspecialchars($owner_data['id_proof_type'] ?? 'Government ID'); ?>: <?php echo htmlspecialchars($owner_data['id_proof_number'] ?? ''); ?>) has been verified by Admin. Your venues display the <strong>"✓ Verified Genuine Owner"</strong> trust badge.</span>
+                </div>
+            </div>
+        <?php elseif ($is_verified == 2): ?>
+            <div class="alert alert-danger" style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                <span style="font-size: 24px;">⚠️</span>
+                <div>
+                    <strong style="font-size: 15px;">ID Proof Verification Rejected:</strong><br>
+                    <span style="font-size: 13.5px;">Your ID proof document was rejected by the Admin. Please contact support or re-register with valid Government ID / Business License proof.</span>
+                </div>
+            </div>
+        <?php else: ?>
+            <div style="background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 16px 20px; border-radius: 10px; margin-bottom: 25px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">🟡</span>
+                <div>
+                    <strong style="font-size: 15px;">Genuine Owner Verification Under Review:</strong><br>
+                    <span style="font-size: 13.5px;">Your submitted ID proof (<?php echo htmlspecialchars($owner_data['id_proof_type'] ?? 'ID Proof'); ?>: <?php echo htmlspecialchars($owner_data['id_proof_number'] ?? 'Submitted'); ?>) is currently under review by Admin.</span>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- KPI Cards -->
         <div class="stats-grid">

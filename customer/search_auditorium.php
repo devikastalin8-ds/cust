@@ -13,7 +13,9 @@ $event_service = isset($_GET['event_service']) ? trim($_GET['event_service']) : 
 $sort = isset($_GET['sort']) ? trim($_GET['sort']) : 'default';
 
 // Construct Dynamic SQL Query
-$sql = "SELECT DISTINCT a.* FROM auditoriums a";
+$sql = "SELECT DISTINCT a.*, o.name AS owner_name, o.is_verified AS owner_is_verified 
+        FROM auditoriums a 
+        LEFT JOIN owners o ON a.owner_id = o.owner_id";
 if ($service_category !== '' || $event_service !== '') {
     $sql .= " LEFT JOIN services s ON a.auditorium_id = s.auditorium_id";
 }
@@ -263,6 +265,9 @@ $has_active_filters = ($search !== '' || $min_price !== '' || $max_price !== '' 
                         <div class="card">
                             <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($row['auditorium_name']); ?>" class="card-img">
                             <div class="card-body">
+                                <?php if (isset($row['owner_is_verified']) && $row['owner_is_verified'] == 1): ?>
+                                    <span class="badge badge-success" style="font-size: 11px; margin-bottom: 8px;">✓ Verified Genuine Owner</span>
+                                <?php endif; ?>
                                 <h3 class="card-title"><?php echo htmlspecialchars($row['auditorium_name']); ?></h3>
                                 <p class="card-info">📍 <?php echo htmlspecialchars($row['location']); ?></p>
                                 <p class="card-info">👥 Capacity: <?php echo htmlspecialchars($row['capacity']); ?> Guests</p>

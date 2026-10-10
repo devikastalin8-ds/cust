@@ -18,13 +18,17 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Owners Table (Auditorium Owners)
+-- 2. Owners Table (Auditorium Owners with ID Proof Verification)
 CREATE TABLE IF NOT EXISTS `owners` (
   `owner_id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(15) DEFAULT NULL,
+  `id_proof_type` VARCHAR(50) DEFAULT 'Aadhaar Card',
+  `id_proof_number` VARCHAR(100) DEFAULT NULL,
+  `id_proof_file` VARCHAR(255) DEFAULT NULL,
+  `is_verified` TINYINT(1) DEFAULT 0, -- 0 = Pending, 1 = Verified, 2 = Rejected
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

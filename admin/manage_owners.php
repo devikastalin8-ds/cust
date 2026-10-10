@@ -10,6 +10,22 @@ if (!isset($_SESSION['admin_logged_in'])) {
 $message = "";
 $msg_type = "";
 
+// Handle Verification Actions (Approve / Reject)
+if (isset($_GET['verify_id'])) {
+    $verify_id = intval($_GET['verify_id']);
+    if ($conn->query("UPDATE owners SET is_verified = 1 WHERE owner_id='$verify_id'") === TRUE) {
+        $message = "Auditorium Owner #$verify_id has been verified as Genuine successfully!";
+        $msg_type = "success";
+    }
+}
+if (isset($_GET['reject_id'])) {
+    $reject_id = intval($_GET['reject_id']);
+    if ($conn->query("UPDATE owners SET is_verified = 2 WHERE owner_id='$reject_id'") === TRUE) {
+        $message = "Verification status for Owner #$reject_id has been set to Rejected.";
+        $msg_type = "warning";
+    }
+}
+
 // Handle Delete Owner with complete cascading cleanup
 if (isset($_GET['delete_id'])) {
     $delete_id = intval($_GET['delete_id']);
@@ -63,7 +79,7 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Owners | Admin</title>
+    <title>Manage & Verify Owners | Admin</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -75,7 +91,7 @@ $result = $conn->query($sql);
                 <ul>
                     <li><a href="dashboard.php">Overview</a></li>
                     <li><a href="manage_users.php">Customers</a></li>
-                    <li><a href="manage_owners.php" class="active">Owners</a></li>
+                    <li><a href="manage_owners.php" class="active">Owners & Verification</a></li>
                     <li><a href="manage_auditoriums.php">Auditoriums</a></li>
                     <li><a href="manage_bookings.php">All Bookings</a></li>
                     <li><a href="logout.php" style="color: #fca5a5;">Logout</a></li>
@@ -86,7 +102,7 @@ $result = $conn->query($sql);
 
     <div class="container">
         
-        <h1 class="section-title">🏢 Registered Auditorium Owners</h1>
+        <h1 class="section-title">🏢 Registered Auditorium Owners & Genuine Verification</h1>
 
         <?php if ($message != ""): ?>
             <div class="alert alert-<?php echo $msg_type; ?>"><?php echo $message; ?></div>
@@ -98,10 +114,10 @@ $result = $conn->query($sql);
                     <tr>
                         <th>Owner ID</th>
                         <th>Name / Organization</th>
-                        <th>Email</th>
-                        <th>Phone</th>
+                        <th>Email & Phone</th>
+                        <th>Submitted ID Proof</th>
+                        <th>Verification Status</th>
                         <th>Halls Listed</th>
-                        <th>Registered Date</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -110,13 +126,45 @@ $result = $conn->query($sql);
                         <?php while ($row = $result->fetch_assoc()): ?>
                             <tr>
                                 <td>#<?php echo $row['owner_id']; ?></td>
-                                <td><strong><?php echo htmlspecialchars($row['name']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                <td><?php echo htmlspecialchars($row['phone']); ?></td>
-                                <td><strong><?php echo $row['total_halls']; ?></strong> Halls</td>
-                                <td><?php echo date('d M, Y', strtotime($row['created_at'])); ?></td>
                                 <td>
-                                    <a href="manage_owners.php?delete_id=<?php echo $row['owner_id']; ?>" onclick="return confirm('Are you sure you want to delete owner <?php echo htmlspecialchars(addslashes($row['name'])); ?>? This will also delete all auditoriums listed by this owner.');" class="btn btn-danger btn-sm">Delete Owner</a>
+                                    <strong><?php echo htmlspecialchars($row['name']); ?></strong>
+                                    <?php if ($row['is_verified'] == 1): ?>
+                                        <br><span class="badge badge-success" style="font-size: 11px;">✓ Verified Genuine</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    ✉️ <?php echo htmlspecialchars($row['email']); ?><br>
+                                    📞 <?php echo htmlspecialchars($row['phone']); ?>
+                                </td>
+                                <td>
+                                    <strong><?php echo htmlspecialchars($row['id_proof_type'] ?? 'Aadhaar Card'); ?></strong><br>
+                                    <span style="font-size: 12px; color:#64748b;">No: <?php echo htmlspecialchars($row['id_proof_number'] ?? 'N/A'); ?></span>
+                                    <?php if (!empty($row['id_proof_file'])): ?>
+                                        <br><a href="../uploads/id_proofs/<?php echo htmlspecialchars($row['id_proof_file']); ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px; margin-top: 4px;">📄 View Document</a>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($row['is_verified'] == 1): ?>
+                                        <span class="badge badge-success">🟢 Verified Genuine</span>
+                                    <?php elseif ($row['is_verified'] == 2): ?>
+                                        <span class="badge badge-danger">🔴 Rejected</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-warning">🟡 Pending Verification</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><strong><?php echo $row['total_halls']; ?></strong> Halls</td>
+                                <td>
+                                    <div style="display:flex; flex-direction:column; gap:4px;">
+                                        <?php if ($row['is_verified'] != 1): ?>
+                                            <a href="manage_owners.php?verify_id=<?php echo $row['owner_id']; ?>" onclick="return confirm('Verify owner <?php echo htmlspecialchars(addslashes($row['name'])); ?> as genuine?');" class="btn btn-success btn-sm">✓ Approve & Verify</a>
+                                        <?php endif; ?>
+
+                                        <?php if ($row['is_verified'] != 2): ?>
+                                            <a href="manage_owners.php?reject_id=<?php echo $row['owner_id']; ?>" class="btn btn-secondary btn-sm">❌ Reject</a>
+                                        <?php endif; ?>
+
+                                        <a href="manage_owners.php?delete_id=<?php echo $row['owner_id']; ?>" onclick="return confirm('Are you sure you want to delete owner <?php echo htmlspecialchars(addslashes($row['name'])); ?>? This will also delete all auditoriums listed by this owner.');" class="btn btn-danger btn-sm">Delete</a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
